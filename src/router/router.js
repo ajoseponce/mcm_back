@@ -311,7 +311,28 @@ router.post('/cambiopass', (req, res) => {
         }
     })
 });
+router.post('/registro', async (req, res) => {
+    const { telefono, apellido, nombre, correo, password } = req.body
+    // let hash = bcrypt.hashSync(password,10);
 
+    // aca  consulto si existe ya ese nombre en la bd
+    let query = `INSERT INTO ciudadanos (apellido, nombre, correo, password, telefono, fecha_alta, estado) VALUES ('${apellido}','${nombre}','${correo}','${password}','${telefono}',NOW(),'A')`;
+    console.log(query)
+    mysqlConeccion.query(query, (err, registros) => {
+        if (!err) {
+            res.json({
+                status: true,
+                mensaje: "El ciudadano se creo correctamente"
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: "Hubo un error en el servidor.La accion no se realizo"
+            });
+            // res.send('Ocurrio un error desde el servidor'+err);
+        }
+    })
+});
 //////////////////////////////////
 //////////////////////////////////
 
