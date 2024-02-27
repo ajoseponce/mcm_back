@@ -1,36 +1,38 @@
 const express = require('express');
 const router = express();
 // libreria que utilizaremos para la encriptacion de los password
-
+const bodyParser = require('body-parser');
+const multer = require('multer');
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({
+  extended: true
+}));
+// Configura multer para manejar la carga de archivos
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'src/uploads/'); // La carpeta donde se guardarán los archivos
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname); // Nombre del archivo guardado
+    }
+  });
+  
+  const upload = multer({ storage: storage });
 // // libreria que utilizaremos para la generacion de nuesrto token/
 const jwt = require('jsonwebtoken');
 //////archivo de coneccion
 const mysqlConeccion = require('../bd/bd');
 ///////////multer
 /////////
-///////
-const multer = require('multer');
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'src/uploads/'); // La carpeta donde se almacenarán los archivos
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname);
-    },
-});
-const upload = multer({ storage: storage });
-//////fin archivo de coneccion
-const multipart = require('connect-multiparty');
 
-const multipartMiddleware = multipart({
-    uploadDir: './src/uploads'
-});
+///////
+
 
 /////////fs y xla
 const fs = require('fs');
 // const xlsx = require('xlsx');
 ///////ruta raiz
-router.get('/', (req, res) => {
+router.get('/test', (req, res) => {
     res.send('hola esta funcionando');
 });
 router.post('/buscar', (req, res) => {
@@ -114,11 +116,11 @@ router.post('/login', (req, res) => {
     const { usuario, password } = req.body
 
     if (usuario != undefined && password != undefined) {
-        mysqlConeccion.query('select u.id, u.name, u.rol,  u.password, u.username from usuarios u where 1 AND username=?', [usuario], (err, rows) => {
+        mysqlConeccion.query('select u.id_ciudadano, CONCAT_WS(" ",u.apellido, u.nombre) nombre_persona,  u.password from ciudadanos u where 1 AND correo=?', [usuario], (err, rows) => {
             if (!err) {
                 if (rows.length != 0) {
                     if (password == rows[0].password) {
-                        jwt.sign({ rows }, 'ec_mds', (err, token) => {
+                        jwt.sign({ rows }, 'mcm_mds', (err, token) => {
                             res.json(
                                 {
                                     status: true,
@@ -329,11 +331,75 @@ router.post('/registro', async (req, res) => {
                 status: false,
                 mensaje: "Hubo un error en el servidor.La accion no se realizo"
             });
-            // res.send('Ocurrio un error desde el servidor'+err);
+            
         }
     })
 });
 //////////////////////////////////
+router.post('/misproductos', (req, res) => {
+    const { id_ciudadano }=req.body
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.id_ciudadano=?',[id_ciudadano], (err, registro) => {
+        if (!err) {
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
+/////////////todos los/////////////////////
+router.post('/allproductos', (req, res) => {
+    const { id_ciudadano }=req.body
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.id_ciudadano!=?',[id_ciudadano], (err, registro) => {
+        if (!err) {
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
 //////////////////////////////////
+router.post('/upload', upload.array('imagenes', 3), (req, res) => {
 
+   const {id_categoria, descripcion, nombre, id_ciudadano }=req.body
+   let query = `INSERT INTO productos(id_categoria, nombre, descripcion, estado, fecha_hora_alta,id_ciudadano) VALUES ('${id_categoria}','${nombre}','${descripcion}','A', NOW() ,'${id_ciudadano}')`;
+   mysqlConeccion.query(query, (err, results, fields) => {
+       const idInsertado = results.insertId;
+       if (!err) {
+            req.files.forEach((row, index) => {
+                mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ', 
+                [idInsertado, row.filename], (error, registros) => {
+                    if (error) {
+                        res.json({
+                            status: false,
+                            mensaje: "Hubo un error"
+                        });
+                        return;
+                    }
+                });
+            })
+            res.json({
+                status: true,
+                mensaje: "El procucto se guardo correctamente"
+            });
+        }else{
+            res.json({
+                status: false,
+                mensaje: "El procucto no se guardo correctamente"
+            }); 
+        }
+    });
+});
+   
 module.exports = router;
