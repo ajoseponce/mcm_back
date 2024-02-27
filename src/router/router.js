@@ -23,9 +23,7 @@ const jwt = require('jsonwebtoken');
 //////archivo de coneccion
 const mysqlConeccion = require('../bd/bd');
 ///////////multer
-/////////
 
-///////
 
 
 /////////fs y xla
@@ -120,7 +118,7 @@ router.post('/login', (req, res) => {
             if (!err) {
                 if (rows.length != 0) {
                     if (password == rows[0].password) {
-                        jwt.sign({ rows }, 'mcm_mds', (err, token) => {
+                        jwt.sign({ rows }, 'mcmmds', (token) => {
                             res.json(
                                 {
                                     status: true,
@@ -164,84 +162,6 @@ router.post('/login', (req, res) => {
 /////////////////////////
 ///////////espacios comunitarios//////////////
 /////////////////////////
-router.post('/espacios', (req, res) => {
-    const { nombre_filtro, barrio_filtro, circuito_filtro } = req.body
-    console.log(req.body)
-    let query = 'select c.* from referencia c where c.id_tipo_referencia=3'
-    if(nombre_filtro){
-        query=query +` AND c.nombre LIKE '%${nombre_filtro}%'`;
-    }
-    if(barrio_filtro){
-        query=query +` AND c.barrio LIKE '%${barrio_filtro}%'`;
-    }
-    if(circuito_filtro){
-        query=query +` AND c.circuito LIKE '%${circuito_filtro}%'`;
-    }
-    
-   
-
-    query = query + ` ORDER BY c.nombre ASC`
-    mysqlConeccion.query(query, (err, registro) => {
-        if (!err) {
-            res.json(registro);
-        } else {
-            console.log(err)
-        }
-    })
-
-});
-
-router.post('/editEC', (req, res) => {
-    const { id_referencia, id_detalle_referencia, nombre, barrio, circuito, domicilio, brinda_almuerzo, brinda_desayuno, brinda_cena, brinda_merienda, funciona_lunes, funciona_martes, funciona_miercoles, funciona_jueves, funciona_viernes, funciona_sabado, funciona_domingo, tipo_findacion, tipo_cooperativa, tipo_asociacion, tipo_organizacion, tipo_otros, tipo_otros_nombre, cuit_cuil_personeria, recibecomida_centralizada, insumos_mds, insumos_municipio, insumos_aportes, insumos_eby, insumos_otros, insumos_nombre, responsable_nombre, responsable_dni, responsable_telefono, responsable_domicilio, responsable_beneficio, colaboradores_cantidad, colaboradores_con_beneficio, colaboradores_sin_beneficio, familias_cantidad, ninos, adultos, discapacitados, adolescentes, extranjeros, extranjeros_nacionalizados, talleres_textil, talleres_reciclado, talleres_pintura, talleres_apoyo_ninos, talleres_panificado, talleres_huertas, talleres_carpinteria, talleres_tejidos, talleres_apoyo_adultos, talleres_otros, talleres_otros_nombre, talleres_que_te_gustaria, cocina_gas, cocina_lena, espacio_cubierto, elementos_cocina, momentos_comidas_retiran, momentos_comidas_comen, se_realizo_operativo, hora_lunes, porciones_lunes, hora_martes, porciones_martes, hora_miercoles, porciones_miercoles, hora_jueves, porciones_jueves, hora_viernes, porciones_viernes, hora_sabado, porciones_sabado, hora_domingo, porciones_domingo ,cocina_enelespacio,insumos_estimacion,modulos,responsable_correo,espacio_abierto,elementos_cocina_incompleto,sanitarios,fecha_inicio_actividad} = req.body
-
-    let query = `UPDATE referencia SET nombre='${nombre}',barrio='${barrio}',circuito='${circuito}',domicilio='${domicilio}' WHERE id='${id_referencia}'`;
-    mysqlConeccion.query(query, (err, registros) => {
-        if (!err) {
-            if (id_detalle_referencia) {
-
-                mysqlConeccion.query('UPDATE referencia_detalle_comedor SET brinda_almuerzo=?, brinda_desayuno=?, brinda_cena=?, brinda_merienda=?, funciona_lunes=?, funciona_martes=?, funciona_miercoles=?, funciona_jueves=?, funciona_viernes=?, funciona_sabado=?, funciona_domingo=?, tipo_findacion=?, tipo_cooperativa=?, tipo_asociacion=?, tipo_organizacion=?, tipo_otros=?, tipo_otros_nombre=?, cuit_cuil_personeria=?, recibecomida_centralizada=?, insumos_mds=?, insumos_municipio=?, insumos_aportes=?, insumos_eby=?, insumos_otros=?, insumos_nombre=?, responsable_nombre=?, responsable_dni=?, responsable_telefono=?, responsable_domicilio=?, responsable_beneficio=?, colaboradores_cantidad=?, colaboradores_con_beneficio=?, colaboradores_sin_beneficio=?, familias_cantidad=?, ninos=?, adultos=?, discapacitados=?, adolescentes=?, extranjeros=?, extranjeros_nacionalizados=?, talleres_textil=?, talleres_reciclado=?, talleres_pintura=?, talleres_apoyo_ninos=?, talleres_panificado=?, talleres_huertas=?, talleres_carpinteria=?, talleres_tejidos=?, talleres_apoyo_adultos=?, talleres_otros=?, talleres_otros_nombre=?, talleres_que_te_gustaria=?, cocina_gas=?, cocina_lena=?, espacio_cubierto=?, elementos_cocina=?, momentos_comidas_retiran=?, momentos_comidas_comen=?, se_realizo_operativo=?, hora_lunes=?, porciones_lunes=?, hora_martes=?, porciones_martes=?, hora_miercoles=?, porciones_miercoles=?, hora_jueves=?, porciones_jueves=?, hora_viernes=?, porciones_viernes=?, hora_sabado=?, porciones_sabado=?, hora_domingo=?, porciones_domingo=?,cocina_enelespacio=?, fecha_actualizacion=NOW(),insumos_estimacion=?,modulos=?,responsable_correo=?,espacio_abierto=?,elementos_cocina_incompleto=?,sanitarios=?,fecha_inicio_actividad=? WHERE id_detalle_referencia=?',
-                 [brinda_almuerzo, brinda_desayuno, brinda_cena, brinda_merienda, funciona_lunes, funciona_martes, funciona_miercoles, funciona_jueves, funciona_viernes, funciona_sabado, funciona_domingo, tipo_findacion, tipo_cooperativa, tipo_asociacion, tipo_organizacion, tipo_otros, tipo_otros_nombre, cuit_cuil_personeria, recibecomida_centralizada, insumos_mds, insumos_municipio, insumos_aportes, insumos_eby, insumos_otros, insumos_nombre, responsable_nombre, responsable_dni, responsable_telefono, responsable_domicilio, responsable_beneficio, colaboradores_cantidad, colaboradores_con_beneficio, colaboradores_sin_beneficio, familias_cantidad, ninos, adultos, discapacitados, adolescentes, extranjeros, extranjeros_nacionalizados, talleres_textil, talleres_reciclado, talleres_pintura, talleres_apoyo_ninos, talleres_panificado, talleres_huertas, talleres_carpinteria, talleres_tejidos, talleres_apoyo_adultos, talleres_otros, talleres_otros_nombre, talleres_que_te_gustaria, cocina_gas, cocina_lena, espacio_cubierto, elementos_cocina, momentos_comidas_retiran, momentos_comidas_comen, se_realizo_operativo, hora_lunes, porciones_lunes, hora_martes, porciones_martes, hora_miercoles, porciones_miercoles, hora_jueves, porciones_jueves, hora_viernes, porciones_viernes, hora_sabado, porciones_sabado, hora_domingo, porciones_domingo,cocina_enelespacio,insumos_estimacion,modulos,responsable_correo,espacio_abierto,elementos_cocina_incompleto,sanitarios,fecha_inicio_actividad, id_detalle_referencia], (err, registros) => {
-                    if (!err) {
-                        res.json({
-                            status: true,
-                            mjs: "edito todos los datos la recontra cageta",
-                            registro: registros
-                        });
-                    } else {
-                        res.json({
-                            status: false,
-                            error: err,
-                            mjs: "no edito ni mienrdaedito todos los datos"
-                        });
-                    }
-
-                })
-            } else {
-                mysqlConeccion.query('INSERT INTO referencia_detalle_comedor (id_referencia, brinda_almuerzo, brinda_desayuno, brinda_cena, brinda_merienda, funciona_lunes, funciona_martes, funciona_miercoles, funciona_jueves, funciona_viernes, funciona_sabado, funciona_domingo, tipo_findacion, tipo_cooperativa, tipo_asociacion, tipo_organizacion, tipo_otros, tipo_otros_nombre, cuit_cuil_personeria, recibecomida_centralizada, insumos_mds, insumos_municipio, insumos_aportes, insumos_eby, insumos_otros, insumos_nombre, responsable_nombre, responsable_dni, responsable_telefono, responsable_domicilio, responsable_beneficio, colaboradores_cantidad, colaboradores_con_beneficio, colaboradores_sin_beneficio, familias_cantidad, ninos, adultos, discapacitados, adolescentes, extranjeros, extranjeros_nacionalizados, talleres_textil, talleres_reciclado, talleres_pintura, talleres_apoyo_ninos, talleres_panificado, talleres_huertas, talleres_carpinteria, talleres_tejidos, talleres_apoyo_adultos, talleres_otros, talleres_otros_nombre, talleres_que_te_gustaria, cocina_gas, cocina_lena, espacio_cubierto, elementos_cocina, momentos_comidas_retiran, momentos_comidas_comen, se_realizo_operativo, hora_lunes, porciones_lunes, hora_martes, porciones_martes, hora_miercoles, porciones_miercoles, hora_jueves, porciones_jueves, hora_viernes, porciones_viernes, hora_sabado, porciones_sabado, hora_domingo, porciones_domingo ,cocina_enelespacio, fecha_actualizacion,insumos_estimacion,modulos,responsable_correo,espacio_abierto,elementos_cocina_incompleto,sanitarios,fecha_inicio_actividad) VALUE( ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, NOW(),?,?,?,?,?,?,?) ',
-                 [id_referencia,brinda_almuerzo, brinda_desayuno, brinda_cena, brinda_merienda, funciona_lunes, funciona_martes, funciona_miercoles, funciona_jueves, funciona_viernes, funciona_sabado, funciona_domingo, tipo_findacion, tipo_cooperativa, tipo_asociacion, tipo_organizacion, tipo_otros, tipo_otros_nombre, cuit_cuil_personeria, recibecomida_centralizada, insumos_mds, insumos_municipio, insumos_aportes, insumos_eby, insumos_otros, insumos_nombre, responsable_nombre, responsable_dni, responsable_telefono, responsable_domicilio, responsable_beneficio, colaboradores_cantidad, colaboradores_con_beneficio, colaboradores_sin_beneficio, familias_cantidad, ninos, adultos, discapacitados, adolescentes, extranjeros, extranjeros_nacionalizados, talleres_textil, talleres_reciclado, talleres_pintura, talleres_apoyo_ninos, talleres_panificado, talleres_huertas, talleres_carpinteria, talleres_tejidos, talleres_apoyo_adultos, talleres_otros, talleres_otros_nombre, talleres_que_te_gustaria, cocina_gas, cocina_lena, espacio_cubierto, elementos_cocina, momentos_comidas_retiran, momentos_comidas_comen, se_realizo_operativo, hora_lunes, porciones_lunes, hora_martes, porciones_martes, hora_miercoles, porciones_miercoles, hora_jueves, porciones_jueves, hora_viernes, porciones_viernes, hora_sabado, porciones_sabado, hora_domingo, porciones_domingo ,cocina_enelespacio,insumos_estimacion,modulos,responsable_correo,espacio_abierto,elementos_cocina_incompleto,sanitarios,fecha_inicio_actividad], (err, registros) => {
-                    if (!err) {
-                        res.json({
-                            status: true,
-                            mjs: "inserto todos los datos la",
-                            registro: registros
-                        });
-                    } else {
-                        res.json({
-                            status: false,
-                            error: err,
-                            mjs: "no inserto ni mienrdaedito todos los datos"
-                        });
-                    }
-
-                })
-            }
-
-
-        } else {
-            console.log(err)
-        }
-    })
-});
 
 ///////////////////////baja beca
 router.post('/cambiopass', (req, res) => {
@@ -297,22 +217,6 @@ router.get('/usuarios', (req, res) => {
     })
 });
 
-router.post('/cambiopass', (req, res) => {
-    const { id_usuario, pass } = req.body
-    // let hash = bcrypt.hashSync(pass,10);
-    console.log(req.body)
-    let query = `UPDATE usuarios SET  password='${hash}' WHERE id_usuario='${id_usuario}'`;
-    mysqlConeccion.query(query, (err, registros) => {
-        if (!err) {
-            res.json({
-                status: true
-            });
-
-        } else {
-            console.log(err)
-        }
-    })
-});
 router.post('/registro', async (req, res) => {
     const { telefono, apellido, nombre, correo, password } = req.body
     // let hash = bcrypt.hashSync(password,10);
