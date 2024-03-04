@@ -1,7 +1,8 @@
 const express= require('express');
 const app = express();
 app.use(express.json());
-
+const path = require('path');
+const uploadsDirectory = path.join(__dirname, 'uploads');
 const morgan =require('morgan');
 //configuraciones
 app.set('puerto' , process.env.PORT || 5000);
@@ -25,6 +26,8 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
+app.use('/uploads', express.static(uploadsDirectory));
+
 //  rutas para mi aplicacion
  app.use(require('./router/router'))
 

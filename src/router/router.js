@@ -39,6 +39,8 @@ router.post('/buscar', (req, res) => {
 });
 
 
+router.post('/uploads', (req, res) => {});
+
 router.post('/importador', upload.single('file'), (req, res) => {
     console.log(req.file, req.body)
     const workbook = xlsx.readFile('./src/uploads/' + req.file.filename); // Reemplaza 'archivo.xlsx' con el nombre de tu archivo
@@ -259,7 +261,7 @@ router.post('/misproductos', (req, res) => {
 /////////////todos los/////////////////////
 router.post('/allproductos', (req, res) => {
     const { id_ciudadano }=req.body
-    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.id_ciudadano!=?',[id_ciudadano], (err, registro) => {
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, MAX(pi.nombre) AS imagen FROM productos p LEFT JOIN productos_imagenes pi ON p.id_producto = pi.id_producto WHERE p.id_ciudadano!=?',[id_ciudadano], (err, registro) => {
         if (!err) {
             res.json({
                 status: true,
