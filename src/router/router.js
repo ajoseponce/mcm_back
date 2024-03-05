@@ -5,19 +5,19 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({
-  extended: true
+    extended: true
 }));
 // Configura multer para manejar la carga de archivos
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'src/uploads/'); // La carpeta donde se guardarán los archivos
+        cb(null, 'src/uploads/'); // La carpeta donde se guardarán los archivos
     },
     filename: function (req, file, cb) {
-      cb(null, Date.now() + '-' + file.originalname); // Nombre del archivo guardado
+        cb(null, Date.now() + '-' + file.originalname); // Nombre del archivo guardado
     }
-  });
-  
-  const upload = multer({ storage: storage });
+});
+
+const upload = multer({ storage: storage });
 // // libreria que utilizaremos para la generacion de nuesrto token/
 const jwt = require('jsonwebtoken');
 //////archivo de coneccion
@@ -39,7 +39,7 @@ router.post('/buscar', (req, res) => {
 });
 
 
-router.post('/uploads', (req, res) => {});
+router.post('/uploads', (req, res) => { });
 
 router.post('/importador', upload.single('file'), (req, res) => {
     console.log(req.file, req.body)
@@ -237,14 +237,14 @@ router.post('/registro', async (req, res) => {
                 status: false,
                 mensaje: "Hubo un error en el servidor.La accion no se realizo"
             });
-            
+
         }
     })
 });
 //////////////////////////////////
 router.post('/misproductos', (req, res) => {
-    const { id_ciudadano }=req.body
-    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.id_ciudadano=?',[id_ciudadano], (err, registro) => {
+    const { id_ciudadano } = req.body
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.id_ciudadano=?', [id_ciudadano], (err, registro) => {
         if (!err) {
             res.json({
                 status: true,
@@ -260,8 +260,25 @@ router.post('/misproductos', (req, res) => {
 });
 /////////////todos los/////////////////////
 router.post('/allproductos', (req, res) => {
-    const { id_ciudadano }=req.body
-    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, MAX(pi.nombre) AS imagen FROM productos p LEFT JOIN productos_imagenes pi ON p.id_producto = pi.id_producto WHERE p.id_ciudadano!=?',[id_ciudadano], (err, registro) => {
+    const { id_ciudadano } = req.body
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, MAX(pi.nombre) AS imagen FROM productos p LEFT JOIN productos_imagenes pi ON p.id_producto = pi.id_producto WHERE estado!="I" AND p.id_ciudadano!=?', [id_ciudadano], (err, registro) => {
+        if (!err) {
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
+/////////////detalle de un producto los/////////////////////
+router.post('/detalleproducto', (req, res) => {
+    const { id_producto } = req.body
+    mysqlConeccion.query('select pi.nombre AS nombre, p.nombre nombre_producto, p.id_ciudadano  FROM productos_imagenes pi INNER JOIN productos p ON p.id_producto=pi.id_producto WHERE pi.id_producto=?', [id_producto], (err, registro) => {
         if (!err) {
             res.json({
                 status: true,
@@ -278,34 +295,203 @@ router.post('/allproductos', (req, res) => {
 //////////////////////////////////
 router.post('/upload', upload.array('imagenes', 3), (req, res) => {
 
-   const {id_categoria, descripcion, nombre, id_ciudadano }=req.body
-   let query = `INSERT INTO productos(id_categoria, nombre, descripcion, estado, fecha_hora_alta,id_ciudadano) VALUES ('${id_categoria}','${nombre}','${descripcion}','A', NOW() ,'${id_ciudadano}')`;
-   mysqlConeccion.query(query, (err, results, fields) => {
-       const idInsertado = results.insertId;
-       if (!err) {
+    const { id_categoria, descripcion, nombre, id_ciudadano } = req.body
+    let query = `INSERT INTO productos(id_categoria, nombre, descripcion, estado, fecha_hora_alta,id_ciudadano) VALUES ('${id_categoria}','${nombre}','${descripcion}','A', NOW() ,'${id_ciudadano}')`;
+    mysqlConeccion.query(query, (err, results, fields) => {
+        const idInsertado = results.insertId;
+        if (!err) {
             req.files.forEach((row, index) => {
-                mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ', 
-                [idInsertado, row.filename], (error, registros) => {
-                    if (error) {
-                        res.json({
-                            status: false,
-                            mensaje: "Hubo un error"
-                        });
-                        return;
-                    }
-                });
+                mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ',
+                    [idInsertado, row.filename], (error, registros) => {
+                        if (error) {
+                            res.json({
+                                status: false,
+                                mensaje: "Hubo un error"
+                            });
+                            return;
+                        }
+                    });
             })
             res.json({
                 status: true,
-                mensaje: "El procucto se guardo correctamente"
+                mensaje: "El producto se guardo correctamente"
             });
-        }else{
+        } else {
             res.json({
                 status: false,
-                mensaje: "El procucto no se guardo correctamente"
-            }); 
+                mensaje: "El producto no se guardo correctamente"
+            });
         }
     });
 });
-   
+/////////////////ofertar//////////////////
+router.post('/ofertar', (req, res) => {
+
+    const { id_producto, id_ofertante, id_ofertado, productos_ofertados } = req.body
+    let query = `INSERT INTO intercambio(id_producto, id_usuario_interesado, id_ofertado, fecha_hora, estado_intercambio) VALUES ('${id_producto}','${id_ofertante}','${id_ofertado}', NOW() ,'Nuevo')`;
+    mysqlConeccion.query(query, (err, results, fields) => {
+        const idInsertado = results.insertId;
+        if (!err) {
+            productos_ofertados.forEach((productos, index) => {
+                mysqlConeccion.query('INSERT INTO  intercambio_detalle (id_intercambio, id_producto) VALUE(?,?) ',
+                    [idInsertado, productos], (error, registros) => {
+                        if (error) {
+                            res.json({
+                                status: false,
+                                mensaje: "Hubo un error"
+                            });
+                            return;
+                        }
+                    });
+            })
+            res.json({
+                status: true,
+                mensaje: "Se oferto por el producto Correctamente, En breve seguro te respondera! Gracias"
+            });
+        }
+    });
+});
+
+/////////////////ofertaron//////////////////
+router.post('/misofertas', (req, res) => {
+
+    const { id_ofertado } = req.body
+    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=pr.id_ciudadano WHERE i.id_ofertado=?', [id_ofertado], (err, registro) => {
+        if (!err) {
+
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
+/////////////////ofertaron//////////////////
+router.post('/ofrecieron', (req, res) => {
+    const { id_ofertado } = req.body
+    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=pr.id_ciudadano WHERE estado_intercambio="Nuevo" AND i.id_ofertado=?', [id_ofertado], async (err, registros) => {
+        if (!err) {
+            try {
+                for (let i = 0; i < registros.length; i++) {
+                    const registro = registros[i];
+                    const detalle = await obtenerDetalle(registro.id_intercambio);
+                    if (detalle.length > 0) {
+                        registro['detalle'] = detalle;
+                    }
+                }
+                console.log(registros);
+                res.json({
+                    status: true,
+                    otrobandera: 'prueba de jose',
+                    datos: registros
+                });
+            } catch (error) {
+                console.error(error);
+                res.json({
+                    status: false,
+                    mensaje: 'Error al obtener detalles'
+                });
+            }
+        } else {
+            console.error(err);
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
+async function obtenerDetalle(id_intercambio) {
+    return new Promise((resolve, reject) => {
+        mysqlConeccion.query('SELECT i.id_producto, p.nombre FROM intercambio_detalle i INNER JOIN productos p ON p.id_producto=i.id_producto  WHERE i.id_intercambio=?', [id_intercambio], async (error, productos) => {
+            if (error) {
+                reject(error);
+            } else {
+                for (let i = 0; i < productos.length; i++) {
+                    const producto = productos[i];
+                    const detallesImagenes = await obtenerDetalleImagenes(producto.id_producto);
+                    if (detallesImagenes.length > 0) {
+                        producto['imagenes'] = detallesImagenes;
+                    }
+                }
+                resolve(productos);
+            }
+        });
+    });
+}
+async function obtenerDetalleImagenes(id_producto) {
+    return new Promise((resolve, reject) => {
+        mysqlConeccion.query('SELECT pi.nombre FROM productos_imagenes pi  WHERE pi.id_producto=?', [id_producto], (error, imagenes) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(imagenes);
+            }
+        });
+    });
+}
+router.get('/detalleintercambio/:id_intercambio', (req, res) => {
+
+    const { id_intercambio } = req.params
+    mysqlConeccion.query('select  i.id_producto FROM intercambio_detalle i  WHERE i.id_intercambio=?', [id_intercambio], (err, registro) => {
+        if (!err) {
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
+////////////////////////////////////////////////////////
+router.post('/aceptarIntercambio', (req, res) => {
+    const { id_intercambio } = req.body
+    // let hash = bcrypt.hashSync(pass,10);
+    console.log(req.body)
+    let query = `UPDATE intercambio SET  estado_intercambio='Aceptado', fecha_hora_actualizacion=NOW() WHERE id_intercambio='${id_intercambio}'`;
+    mysqlConeccion.query(query, (err, registros) => {
+        if (!err) {
+
+            mysqlConeccion.query('UPDATE productos p INNER JOIN intercambio i ON p.id_producto = i.id_producto SET p.estado = "I" WHERE i.id_intercambio=?', [id_intercambio], async (error, productos) => {
+                if (!error) {
+                    mysqlConeccion.query('UPDATE productos p INNER JOIN intercambio_detalle i ON p.id_producto = i.id_producto SET p.estado = "I" WHERE i.id_intercambio=?', [id_intercambio], async (error, productos) => {
+                        if (!error) {
+                            res.json({
+                                status: true
+                            });
+                        }
+                    })
+                }})
+        } else {
+            console.log(err)
+        }
+    })
+});
+
+///////////////////////////////////////////////////////
+router.post('/denegoIntercambio', (req, res) => {
+    const { id_intercambio } = req.body
+    // let hash = bcrypt.hashSync(pass,10);
+    console.log(req.body)
+    let query = `UPDATE intercambio SET estado_intercambio='Denegado', fecha_hora_actualizacion=NOW() WHERE id_intercambio='${id_intercambio}'`;
+    mysqlConeccion.query(query, (err, registros) => {
+        if (!err) {
+            res.json({
+                status: true
+            });
+
+        } else {
+            console.log(err)
+        }
+    })
+});
 module.exports = router;
