@@ -261,7 +261,7 @@ router.post('/misproductos', (req, res) => {
 /////////////todos los/////////////////////
 router.post('/allproductos', (req, res) => {
     const { id_ciudadano } = req.body
-    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, MAX(pi.nombre) AS imagen FROM productos p LEFT JOIN productos_imagenes pi ON p.id_producto = pi.id_producto WHERE estado!="I" AND p.id_ciudadano!=?', [id_ciudadano], (err, registro) => {
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, pi.nombre AS imagen FROM productos p LEFT JOIN productos_imagenes pi ON p.id_producto = pi.id_producto WHERE p.estado!="I" AND p.id_ciudadano!=? group by p.id_producto', [id_ciudadano], (err, registro) => {
         if (!err) {
             res.json({
                 status: true,
@@ -374,7 +374,7 @@ router.post('/misofertas', (req, res) => {
 /////////////////ofertaron//////////////////
 router.post('/ofrecieron', (req, res) => {
     const { id_ofertado } = req.body
-    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=pr.id_ciudadano WHERE estado_intercambio="Nuevo" AND i.id_ofertado=?', [id_ofertado], async (err, registros) => {
+    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=i.id_usuario_interesado WHERE estado_intercambio="Nuevo" AND i.id_ofertado=?', [id_ofertado], async (err, registros) => {
         if (!err) {
             try {
                 for (let i = 0; i < registros.length; i++) {
