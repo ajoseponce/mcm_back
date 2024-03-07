@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage , limits: {
-    fieldSize: 10 * 1024 * 1024 // 10 MB (o cualquier tamaño que necesites)
+    fieldSize: 40 * 1024 * 1024 // 10 MB (o cualquier tamaño que necesites)
   }});
 // // libreria que utilizaremos para la generacion de nuesrto token/
 const jwt = require('jsonwebtoken');
