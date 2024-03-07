@@ -18,7 +18,9 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage , limits: {
+    fieldSize: 10 * 1024 * 1024 // 10 MB (o cualquier tamaño que necesites)
+  }});
 // // libreria que utilizaremos para la generacion de nuesrto token/
 const jwt = require('jsonwebtoken');
 //////archivo de coneccion
@@ -307,19 +309,7 @@ router.post('/upload', upload.array('imagenes', 3), (req, res) => {
     mysqlConeccion.query(query, (err, results, fields) => {
         const idInsertado = results.insertId;
         if (!err) {
-            // req.files.forEach((row, index) => {
-            //     consolerow.filename
-            //     mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ',
-            //         [idInsertado, row.filename], (error, registros) => {
-            //             if (error) {
-            //                 res.json({
-            //                     status: false,
-            //                     mensaje: "Hubo un error"
-            //                 });
-            //                 return;
-            //             }
-            //         });
-            // })
+            
             images.forEach((image, index) => {
                 console.log('paso')
                 // Decodifica la imagen base64 y la guarda en una carpeta de uploads
