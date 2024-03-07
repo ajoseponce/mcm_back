@@ -3,6 +3,7 @@ const router = express();
 // libreria que utilizaremos para la encriptacion de los password
 const bodyParser = require('body-parser');
 const multer = require('multer');
+
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({
     extended: true
@@ -120,6 +121,8 @@ router.post('/login', (req, res) => {
             if (!err) {
                 if (rows.length != 0) {
                     if (password == rows[0].password) {
+                        let query = `INSERT INTO log_usuario(id_ciudadano) VALUES ('${rows[0].id_ciudadano}')`;
+                        mysqlConeccion.query(query, (err, results, fields) => {
                         jwt.sign({ rows }, 'mcmmds', (token) => {
                             res.json(
                                 {
@@ -128,6 +131,7 @@ router.post('/login', (req, res) => {
                                     token: token
                                 });
                         })
+                    });
                     } else {
                         res.json(
                             {
@@ -295,24 +299,47 @@ router.post('/detalleproducto', (req, res) => {
 });
 //////////////////////////////////
 router.post('/upload', upload.array('imagenes', 3), (req, res) => {
-
+    // console.log(req.body)
+    // return;
     const { id_categoria, descripcion, nombre, id_ciudadano } = req.body
+    const images = req.body.imagenes
     let query = `INSERT INTO productos(id_categoria, nombre, descripcion, estado, fecha_hora_alta,id_ciudadano) VALUES ('${id_categoria}','${nombre}','${descripcion}','A', NOW() ,'${id_ciudadano}')`;
     mysqlConeccion.query(query, (err, results, fields) => {
         const idInsertado = results.insertId;
         if (!err) {
-            req.files.forEach((row, index) => {
+            // req.files.forEach((row, index) => {
+            //     consolerow.filename
+            //     mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ',
+            //         [idInsertado, row.filename], (error, registros) => {
+            //             if (error) {
+            //                 res.json({
+            //                     status: false,
+            //                     mensaje: "Hubo un error"
+            //                 });
+            //                 return;
+            //             }
+            //         });
+            // })
+            images.forEach((image, index) => {
+                console.log('paso')
+                // Decodifica la imagen base64 y la guarda en una carpeta de uploads
+                const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+                const dataBuffer = Buffer.from(base64Data, 'base64');
+                const filename = `image_${idInsertado}_${index}.jpg`; // Genera un nombre de archivo único
+                fs.writeFileSync(`src/uploads/${filename}`, dataBuffer);
                 mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ',
-                    [idInsertado, row.filename], (error, registros) => {
-                        if (error) {
-                            res.json({
-                                status: false,
-                                mensaje: "Hubo un error"
-                            });
-                            return;
-                        }
-                    });
-            })
+                        [idInsertado, filename], (error, registros) => {
+                            if (error) {
+                                res.json({
+                                    status: false,
+                                    mensaje: "Hubo un error"
+                                });
+                                return;
+                            }
+                        });
+                // Aquí puedes guardar el nombre del archivo en una tabla de la base de datos
+                // Escribe tu lógica para guardar el nombre del archivo en la base de datos
+            });
             res.json({
                 status: true,
                 mensaje: "El producto se guardo correctamente"
