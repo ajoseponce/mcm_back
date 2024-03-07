@@ -306,6 +306,7 @@ router.post('/upload', upload.array('imagenes', 3), (req, res) => {
     const { id_categoria, descripcion, nombre, id_ciudadano } = req.body
     const images = req.body.imagenes
     let query = `INSERT INTO productos(id_categoria, nombre, descripcion, estado, fecha_hora_alta,id_ciudadano) VALUES ('${id_categoria}','${nombre}','${descripcion}','A', NOW() ,'${id_ciudadano}')`;
+    console.log(query)
     mysqlConeccion.query(query, (err, results, fields) => {
         const idInsertado = results.insertId;
         if (!err) {
