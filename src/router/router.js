@@ -261,7 +261,7 @@ router.post('/misproductos', (req, res) => {
 /////////////todos los/////////////////////
 router.post('/allproductos', (req, res) => {
     const { id_ciudadano } = req.body
-    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, pi.nombre AS imagen FROM productos p LEFT JOIN productos_imagenes pi ON p.id_producto = pi.id_producto WHERE p.estado!="I" AND p.id_ciudadano!=? group by p.id_producto', [id_ciudadano], (err, registro) => {
+    mysqlConeccion.query('SELECT  p.id_producto, MAX(p.nombre) AS nombre, DATE_FORMAT(MAX(fecha_hora_alta), "%d-%m-%Y %H:%i") AS fecha_hora_formateada, MAX(pi.nombre) AS imagen FROM  productos p LEFT JOIN  productos_imagenes pi ON p.id_producto = pi.id_producto WHERE p.estado != "I" AND p.id_ciudadano != ? GROUP BY p.id_producto', [id_ciudadano], (err, registro) => {
         if (!err) {
             res.json({
                 status: true,
@@ -270,7 +270,8 @@ router.post('/allproductos', (req, res) => {
         } else {
             res.json({
                 status: false,
-                mensaje: 'Sin Datos'
+                mensaje: 'Sin Datos',
+                error: err
             });
         }
     })
@@ -329,8 +330,11 @@ router.post('/ofertar', (req, res) => {
 
     const { id_producto, id_ofertante, id_ofertado, productos_ofertados } = req.body
     let query = `INSERT INTO intercambio(id_producto, id_usuario_interesado, id_ofertado, fecha_hora, estado_intercambio) VALUES ('${id_producto}','${id_ofertante}','${id_ofertado}', NOW() ,'Nuevo')`;
+    console.log(query)
+
     mysqlConeccion.query(query, (err, results, fields) => {
         const idInsertado = results.insertId;
+        
         if (!err) {
             productos_ofertados.forEach((productos, index) => {
                 mysqlConeccion.query('INSERT INTO  intercambio_detalle (id_intercambio, id_producto) VALUE(?,?) ',
@@ -348,15 +352,40 @@ router.post('/ofertar', (req, res) => {
                 status: true,
                 mensaje: "Se oferto por el producto Correctamente, En breve seguro te respondera! Gracias"
             });
+        }else{
+            res.json({
+                status: false,
+                error: err
+            });
         }
     });
 });
 
-/////////////////ofertaron//////////////////
+/////////////////ofertas recividas//////////////////
 router.post('/misofertas', (req, res) => {
 
     const { id_ofertado } = req.body
-    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=pr.id_ciudadano WHERE i.id_ofertado=?', [id_ofertado], (err, registro) => {
+    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=pr.id_usuario_interesado WHERE i.id_ofertado=?', [id_ofertado], (err, registro) => {
+        if (!err) {
+
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
+        }
+    })
+});
+
+/////////////////ofertas realizads//////////////////
+router.post('/ofertasrealizadas', (req, res) => {
+
+    const { id_ciudadano } = req.body
+    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=i.id_ofertado WHERE i.id_usuario_interesado=?', [id_ciudadano], (err, registro) => {
         if (!err) {
 
             res.json({
@@ -377,28 +406,34 @@ router.post('/ofrecieron', (req, res) => {
     mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=i.id_usuario_interesado WHERE estado_intercambio="Nuevo" AND i.id_ofertado=?', [id_ofertado], async (err, registros) => {
         if (!err) {
             try {
-                for (let i = 0; i < registros.length; i++) {
+                if(registros.length>0){
+                    for (let i = 0; i < registros.length; i++) {
                     const registro = registros[i];
                     const detalle = await obtenerDetalle(registro.id_intercambio);
                     if (detalle.length > 0) {
                         registro['detalle'] = detalle;
                     }
                 }
-                console.log(registros);
+                
                 res.json({
                     status: true,
-                    otrobandera: 'prueba de jose',
                     datos: registros
                 });
+                }else{
+                    res.json({
+                        status: false,
+                        mensaje: 'Sin Datos'
+                    });
+                }
             } catch (error) {
-                console.error(error);
+               
                 res.json({
                     status: false,
                     mensaje: 'Error al obtener detalles'
                 });
             }
         } else {
-            console.error(err);
+            
             res.json({
                 status: false,
                 mensaje: 'Sin Datos'
@@ -491,6 +526,22 @@ router.post('/denegoIntercambio', (req, res) => {
 
         } else {
             console.log(err)
+        }
+    })
+});
+router.post('/misintercambios', (req, res) => {
+    const { id_ciudadano } = req.body
+    mysqlConeccion.query('SELECT DATE_FORMAT(fecha_hora, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada, p.nombre, concat_ws(" ", c.apellido, c.nombre) interesado, c.telefono, c.correo  from intercambio i inner join ciudadanos c on c.id_ciudadano=i.id_usuario_interesado INNER join productos p on p.id_producto=i.id_producto WHERE i.id_ofertado=?', [id_ciudadano], (err, registro) => {
+        if (!err) {
+            res.json({
+                status: true,
+                datos: registro
+            });
+        } else {
+            res.json({
+                status: false,
+                mensaje: 'Sin Datos'
+            });
         }
     })
 });
