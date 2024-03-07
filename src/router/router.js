@@ -325,7 +325,7 @@ router.post('/upload', upload.array('imagenes', 3), (req, res) => {
                 // Decodifica la imagen base64 y la guarda en una carpeta de uploads
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
                 const dataBuffer = Buffer.from(base64Data, 'base64');
-                const filename = `image_${idInsertado}_${index}.jpg`; // Genera un nombre de archivo único
+                const filename = `image_${idInsertado}_${index}.jpeg`; // Genera un nombre de archivo único
                 fs.writeFileSync(`src/uploads/${filename}`, dataBuffer);
                 mysqlConeccion.query('INSERT INTO productos_imagenes (id_producto, nombre, estado) VALUE(?,?,"A") ',
                         [idInsertado, filename], (error, registros) => {
