@@ -241,7 +241,7 @@ router.post('/registro', async (req, res) => {
         } else {
             res.json({
                 status: false,
-                mensaje: "Hubo un error en el servidor.La accion no se realizo"
+                mensaje: "Hubo un error.El correo ya se encuentra registrado."
             });
 
         }
@@ -250,12 +250,23 @@ router.post('/registro', async (req, res) => {
 //////////////////////////////////
 router.post('/misproductos', (req, res) => {
     const { id_ciudadano } = req.body
-    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.id_ciudadano=?', [id_ciudadano], (err, registro) => {
+    mysqlConeccion.query('select *, DATE_FORMAT(fecha_hora_alta, "%d-%m-%Y %H:%i  ") AS fecha_hora_formateada FROM productos p WHERE p.estado="A" AND p.id_ciudadano=?', [id_ciudadano], async (err, registros) => {
         if (!err) {
-            res.json({
-                status: true,
-                datos: registro
-            });
+            
+            
+                for (let i = 0; i < registros.length; i++) {
+                    const registro = registros[i];
+                    const detallesImagenes = await obtenerDetalleImagenes(registro.id_producto);
+                    if (detallesImagenes.length > 0) {
+                        registro['imagenes'] = detallesImagenes;
+                    }
+                }
+                // resolve(productos);
+                res.json({
+                    status: true,
+                    datos: registros
+                });
+
         } else {
             res.json({
                 status: false,
@@ -560,6 +571,24 @@ router.post('/misintercambios', (req, res) => {
                 status: false,
                 mensaje: 'Sin Datos'
             });
+        }
+    })
+});
+
+///////////////////////////////////////////////////////
+router.post('/bajaproducto', (req, res) => {
+    const { id_producto } = req.body
+    
+    console.log(req.body)
+    let query = `UPDATE productos SET estado='B' WHERE id_producto='${id_producto}'`;
+    mysqlConeccion.query(query, (err, registros) => {
+        if (!err) {
+            res.json({
+                status: true
+            });
+
+        } else {
+            console.log(err)
         }
     })
 });
