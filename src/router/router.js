@@ -393,8 +393,8 @@ router.post('/ofertar', (req, res) => {
 /////////////////ofertas recividas//////////////////
 router.post('/misofertas', (req, res) => {
 
-    const { id_ofertado } = req.body
-    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto, i.id_producto, id_intercambio FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=pr.id_usuario_interesado WHERE i.id_ofertado=?', [id_ofertado], (err, registro) => {
+    const { id_ciudadano } = req.body
+    mysqlConeccion.query('select p.nombre AS nombre_persona, pr.nombre nombre_producto,DATE_FORMAT(i.fecha_hora, "%d-%m-%Y %H:%i  ") AS fecha_hora, pr.descripcion, i.id_producto, id_intercambio , i.estado_intercambio, p.correo, p.telefono FROM intercambio i INNER JOIN productos pr ON pr.id_producto=i.id_producto INNER JOIN ciudadanos p ON p.id_ciudadano=i.id_ofertado WHERE i.id_usuario_interesado=?', [id_ciudadano], (err, registro) => {
         if (!err) {
 
             res.json({
